@@ -1,0 +1,48 @@
+service: sizy-api
+
+frameworkVersion: '>=2.68.0'
+configValidationMode: error
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  profile: tony
+  stage: ${opt:stage, 'development'} # --stage development, production / default is development
+  region: ap-northeast-2 # Lambda Edge는 us-east-1에만 배포 가능.
+  versionFunctions: true
+  stackName: ${self:service}-${self:provider.stage}
+  environment:
+    NODE_ENV: ${self:provider.stage}
+  tags:
+    Service: ${self:service}
+    Environment: ${self:provider.stage}
+
+
+# layers:
+#   libs:
+#     path: layer
+
+package:
+  patterns:
+    - '!node_modules/.prisma/client/libquery_engine-*'
+    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
+    - '!node_modules/prisma/libquery_engine-*'
+    - '!node_modules/@prisma/engines/**'
+
+functions:
+  main:
+    handler: dist/lambda.handler
+    name: ${self:service}-${self:provider.stage}
+    memorySize: 1024
+    timeout: 30
+    package:
+      patterns:
+        - dist/*
+    events:
+      - http:
+          path: /
+          method: ANY
+      - http:
+          path: /{proxy+}
+          method: ANY
+        

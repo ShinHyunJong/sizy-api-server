@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Brand {
+  id       Int     @id @default(autoincrement()) @db.UnsignedInt
+  name     String? @db.VarChar(11)
+  shopList Shop[]
+}
+
+model Customer {
+  id               Int           @id @default(autoincrement()) @db.UnsignedInt
+  name             String?       @db.VarChar(4)
+  phone            String?       @unique(map: "phone") @db.VarChar(16)
+  isMarketingAgree Boolean?
+  placeName        String?       @db.VarChar(255)
+  lotAddressName   String?       @db.VarChar(255)
+  roadAddressName  String?       @db.VarChar(255)
+  createdAt        DateTime?     @default(now()) @db.Timestamp(0)
+  updatedAt        DateTime?     @default(now()) @db.Timestamp(0)
+  sizeRequest      SizeRequest[]
+
+  @@index([phone], map: "phone_index")
+}
+
+model CustomerTag {
+  id         Int  @id @default(autoincrement()) @db.UnsignedInt
+  customerId Int? @db.UnsignedInt
+  tagId      Int? @db.UnsignedInt
+  storyId    Int? @db.UnsignedInt
+}
+
+model CustomerTagStory {
+  id        Int  @id @default(autoincrement()) @db.UnsignedInt
+  createdAt Int?
+  updatedAt Int?
+}
+
+model RequestItem {
+  id              Int               @id @default(autoincrement()) @db.UnsignedInt
+  requestId       Int?              @db.UnsignedInt
+  count           Int
+  productCode     String            @default("") @db.VarChar(20)
+  productSize     String            @default("") @db.VarChar(20)
+  comment         String?           @default("") @db.VarChar(1000)
+  createdAt       DateTime?         @default(now()) @db.Timestamp(0)
+  updatedAt       DateTime?         @default(now()) @db.Timestamp(0)
+  sizeRequest     SizeRequest?      @relation(fields: [requestId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RequestItem_ibfk_1")
+  RequestItemType RequestItemType[]
+
+  @@index([productCode], map: "product_code_idx")
+  @@index([productSize], map: "product_size_idx")
+  @@index([requestId], map: "requestId")
+  @@index([comment], map: "comment_idx")
+}
+
+model Seller {
+  id              Int           @id @default(autoincrement()) @db.UnsignedInt
+  shopId          Int?          @db.UnsignedInt
+  name            String?       @db.VarChar(11)
+  position        String?       @db.VarChar(11)
+  alias           String        @unique(map: "alias") @default("") @db.VarChar(20)
+  email           String        @unique(map: "email") @default("") @db.VarChar(20)
+  password        String        @default("") @db.VarChar(255)
+  role            Int?
+  shop            Shop?         @relation(fields: [shopId], references: [id], onUpdate: NoAction, map: "Seller_ibfk_1")
+  sizeRequestList SizeRequest[]
+
+  @@index([shopId], map: "shopId")
+}
+
+model Shop {
+  id              Int           @id @default(autoincrement()) @db.UnsignedInt
+  brandId         Int?          @db.UnsignedInt
+  alias           String        @unique(map: "alias") @default("") @db.VarChar(20)
+  branch          String?       @db.VarChar(20)
+  Seller          Seller[]
+  brand           Brand?        @relation(fields: [brandId], references: [id], onUpdate: NoAction, map: "Shop_ibfk_1")
+  sizeRequestList SizeRequest[]
+
+  @@index([brandId], map: "brandId")
+}
+
+model SizeRequest {
+  id              Int           @id @default(autoincrement()) @db.UnsignedInt
+  shopId          Int           @db.UnsignedInt
+  customerId      Int           @db.UnsignedInt
+  sellerId        Int?          @db.UnsignedInt
+  createdAt       DateTime?     @default(now()) @db.Timestamp(0)
+  updatedAt       DateTime?     @default(now()) @db.Timestamp(0)
+  requestItemList RequestItem[]
+  shop            Shop          @relation(fields: [shopId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_1")
+  customer        Customer      @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_2")
+  seller          Seller?       @relation(fields: [sellerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_3")
+
+  @@index([customerId], map: "customerId")
+  @@index([sellerId], map: "sellerId")
+  @@index([shopId], map: "shopId")
+}
+
+model Tag {
+  id   Int     @id @default(autoincrement()) @db.UnsignedInt
+  name String? @db.VarChar(10)
+}
+
+model RequestItemType {
+  id          Int          @id @default(autoincrement()) @db.UnsignedInt
+  requestId   Int?         @db.UnsignedInt
+  typeId      Int?         @db.UnsignedInt
+  RequestItem RequestItem? @relation(fields: [requestId], references: [id], onDelete: Cascade, map: "RequestItemType_ibfk_1")
+  RequestType RequestType? @relation(fields: [typeId], references: [id], onUpdate: NoAction, map: "RequestItemType_ibfk_2")
+
+  @@index([requestId], map: "requestId")
+  @@index([typeId], map: "typeId")
+}
+
+model RequestType {
+  id              Int               @id @default(autoincrement()) @db.UnsignedInt
+  name            String?           @db.VarChar(10)
+  RequestItemType RequestItemType[]
+}
