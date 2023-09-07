@@ -1,12 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 
-import csv from 'csv-parser';
-import fs from 'fs';
-import { content } from './constants';
-import { sendSMS } from './utils/sms';
-import { title } from 'process';
-
 @Injectable()
 export class AppService {
   constructor(private prismaService: PrismaService) {}
