@@ -24,28 +24,28 @@ interface SendSMSResponse {
 
 type Recipient = {
   recipientNo: string;
+  templateParameter: any;
 };
 
-export const sendSMS = async (
+export const sendKakao = async (
   recipientList: Recipient[],
-  title: string,
-  message: string,
+  templateCode: string,
 ): Promise<SendSMSResponse> => {
   const options: AxiosRequestConfig = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Secret-Key': 'mebSMjt7',
+      'X-Secret-Key': 'sStzL6Wna7OMrKuP',
     },
-    url: `https://api-sms.cloud.toast.com/sms/v3.0/appKeys/MqZCZ9QcQYAEZI6E/sender/mms`,
+    url: `https://api-alimtalk.cloud.toast.com/alimtalk/v2.3/appkeys/QdF67bSfEb54usgK/messages`,
     data: {
-      title,
-      sendNo: '07078076505',
-      body: message,
-      senderGroupingKey: 'SenderGroupingKey',
+      senderKey: 'f28fdd166ba8b5a367ea512ed20943f35d8ca3c0',
+      templateCode,
       recipientList,
     },
   };
+
   const response = await axios(options);
+  console.log(response.data.message.sendResults);
   return response.data;
 };

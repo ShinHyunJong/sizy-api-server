@@ -1,11 +1,56 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 
+import csv from 'csv-parser';
+import fs from 'fs';
+import { content } from './constants';
+import { sendSMS } from './utils/sms';
+import { title } from 'process';
+
 @Injectable()
 export class AppService {
   constructor(private prismaService: PrismaService) {}
   getHello(): string {
     return 'Hello Sizy!';
+  }
+
+  // async sms() {
+  //   const results = [];
+  //   fs.createReadStream('viven.csv')
+  //     .pipe(csv())
+  //     .on('data', (data) => results.push(data))
+  //     .on('end', async () => {
+  //       const mapped = results.map((x) => {
+  //         return {
+  //           receipientList: [{ recipientNo: x['받는번호'] }],
+  //           title: `${x['받는사람']}님 안녕하세요!`,
+  //           message: content(),
+  //         };
+  //       });
+
+  //       await Promise.all(
+  //         mapped.map(async (x) => {
+  //           await sendSMS(x.receipientList, x.title, x.message);
+  //         }),
+  //       );
+  //     });
+  // }
+
+  async getProductCodeMap(shopId: number) {
+    const { brandId } = await this.prismaService.shop.findUnique({
+      where: {
+        id: shopId,
+      },
+      select: {
+        brandId: true,
+      },
+    });
+    const codeMapList = await this.prismaService.productCodeMap.findMany({
+      where: {
+        brandId,
+      },
+    });
+    return codeMapList;
   }
 
   async unionSerach(sellerId: number, query: string) {

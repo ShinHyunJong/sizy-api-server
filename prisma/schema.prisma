@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
 datasource db {
@@ -8,22 +9,21 @@ datasource db {
 }
 
 model Brand {
-  id       Int     @id @default(autoincrement()) @db.UnsignedInt
-  name     String? @db.VarChar(11)
-  shopList Shop[]
+  id             Int              @id @default(autoincrement()) @db.UnsignedInt
+  name           String?          @db.VarChar(11)
+  ProductCodeMap ProductCodeMap[]
+  shopList       Shop[]
 }
 
 model Customer {
-  id               Int           @id @default(autoincrement()) @db.UnsignedInt
-  name             String?       @db.VarChar(4)
-  phone            String?       @unique(map: "phone") @db.VarChar(16)
-  isMarketingAgree Boolean?
-  placeName        String?       @db.VarChar(255)
-  lotAddressName   String?       @db.VarChar(255)
-  roadAddressName  String?       @db.VarChar(255)
-  createdAt        DateTime?     @default(now()) @db.Timestamp(0)
-  updatedAt        DateTime?     @default(now()) @db.Timestamp(0)
-  sizeRequest      SizeRequest[]
+  id                  Int               @id @default(autoincrement()) @db.UnsignedInt
+  name                String?           @db.VarChar(4)
+  phone               String?           @unique(map: "phone") @db.VarChar(16)
+  isMarketingAgree    Boolean?
+  createdAt           DateTime?         @default(now()) @db.Timestamp(0)
+  updatedAt           DateTime?         @default(now()) @db.Timestamp(0)
+  customerAddressList CustomerAddress[]
+  sizeRequest         SizeRequest[]
 
   @@index([phone], map: "phone_index")
 }
@@ -42,61 +42,79 @@ model CustomerTagStory {
 }
 
 model RequestItem {
-  id              Int               @id @default(autoincrement()) @db.UnsignedInt
-  requestId       Int?              @db.UnsignedInt
-  count           Int
-  productCode     String            @default("") @db.VarChar(20)
-  productSize     String            @default("") @db.VarChar(20)
-  comment         String?           @default("") @db.VarChar(1000)
-  createdAt       DateTime?         @default(now()) @db.Timestamp(0)
-  updatedAt       DateTime?         @default(now()) @db.Timestamp(0)
-  sizeRequest     SizeRequest?      @relation(fields: [requestId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RequestItem_ibfk_1")
-  RequestItemType RequestItemType[]
+  id             Int           @id @default(autoincrement()) @db.UnsignedInt
+  requestId      Int?          @db.UnsignedInt
+  orderAddressId Int?          @db.UnsignedInt
+  count          Int
+  color          String?       @db.VarChar(10)
+  productCode    String        @default("") @db.VarChar(20)
+  productSize    String        @default("") @db.VarChar(20)
+  comment        String?       @default("") @db.VarChar(1000)
+  orderCount     Int?
+  keepCount      Int?
+  alterComment   String?       @db.VarChar(255)
+  createdAt      DateTime?     @default(now()) @db.Timestamp(0)
+  updatedAt      DateTime?     @default(now()) @db.Timestamp(0)
+  alterPosition  String?       @db.VarChar(10)
+  alterMount     Float?        @db.Float
+  isReorder      Boolean?
+  isReady        Boolean?
+  orderAddress   OrderAddress? @relation(fields: [orderAddressId], references: [id], onUpdate: NoAction, map: "RequestItem_ibfk_2")
+  sizeRequest    SizeRequest?  @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "RequestItem_ibfk_1")
 
   @@index([productCode], map: "product_code_idx")
   @@index([productSize], map: "product_size_idx")
   @@index([requestId], map: "requestId")
   @@index([comment], map: "comment_idx")
+  @@index([orderAddressId], map: "orderAddressId")
 }
 
 model Seller {
-  id              Int           @id @default(autoincrement()) @db.UnsignedInt
-  shopId          Int?          @db.UnsignedInt
-  name            String?       @db.VarChar(11)
-  position        String?       @db.VarChar(11)
-  alias           String        @unique(map: "alias") @default("") @db.VarChar(20)
-  email           String        @unique(map: "email") @default("") @db.VarChar(20)
-  password        String        @default("") @db.VarChar(255)
+  id              Int            @id @default(autoincrement()) @db.UnsignedInt
+  shopId          Int?           @db.UnsignedInt
+  name            String?        @db.VarChar(11)
+  position        String?        @db.VarChar(11)
+  alias           String         @unique(map: "alias") @default("") @db.VarChar(20)
+  email           String         @unique(map: "email") @default("") @db.VarChar(50)
+  password        String         @default("") @db.VarChar(255)
   role            Int?
-  shop            Shop?         @relation(fields: [shopId], references: [id], onUpdate: NoAction, map: "Seller_ibfk_1")
+  Notification    Notification[]
+  shop            Shop?          @relation(fields: [shopId], references: [id], onUpdate: NoAction, map: "Seller_ibfk_1")
   sizeRequestList SizeRequest[]
 
   @@index([shopId], map: "shopId")
 }
 
 model Shop {
-  id              Int           @id @default(autoincrement()) @db.UnsignedInt
-  brandId         Int?          @db.UnsignedInt
-  alias           String        @unique(map: "alias") @default("") @db.VarChar(20)
-  branch          String?       @db.VarChar(20)
+  id              Int               @id @default(autoincrement()) @db.UnsignedInt
+  brandId         Int?              @db.UnsignedInt
+  alias           String            @unique(map: "alias") @default("") @db.VarChar(20)
+  branch          String?           @db.VarChar(20)
+  parcelCo        String?           @db.VarChar(20)
+  phone           String?           @db.VarChar(20)
+  detail          String?           @db.VarChar(20)
+  building        String?           @db.VarChar(30)
+  CustomerAddress CustomerAddress[]
   Seller          Seller[]
-  brand           Brand?        @relation(fields: [brandId], references: [id], onUpdate: NoAction, map: "Shop_ibfk_1")
+  brand           Brand?            @relation(fields: [brandId], references: [id], onUpdate: NoAction, map: "Shop_ibfk_1")
   sizeRequestList SizeRequest[]
 
   @@index([brandId], map: "brandId")
 }
 
 model SizeRequest {
-  id              Int           @id @default(autoincrement()) @db.UnsignedInt
-  shopId          Int           @db.UnsignedInt
-  customerId      Int           @db.UnsignedInt
-  sellerId        Int?          @db.UnsignedInt
-  createdAt       DateTime?     @default(now()) @db.Timestamp(0)
-  updatedAt       DateTime?     @default(now()) @db.Timestamp(0)
+  id              Int            @id @default(autoincrement()) @db.UnsignedInt
+  shopId          Int            @db.UnsignedInt
+  customerId      Int            @db.UnsignedInt
+  sellerId        Int?           @db.UnsignedInt
+  createdAt       DateTime?      @default(now()) @db.Timestamp(0)
+  updatedAt       DateTime?      @default(now()) @db.Timestamp(0)
+  Notification    Notification[]
+  OrderAddress    OrderAddress[]
   requestItemList RequestItem[]
-  shop            Shop          @relation(fields: [shopId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_1")
-  customer        Customer      @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_2")
-  seller          Seller?       @relation(fields: [sellerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_3")
+  shop            Shop           @relation(fields: [shopId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_1")
+  customer        Customer       @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_2")
+  seller          Seller?        @relation(fields: [sellerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_3")
 
   @@index([customerId], map: "customerId")
   @@index([sellerId], map: "sellerId")
@@ -108,19 +126,75 @@ model Tag {
   name String? @db.VarChar(10)
 }
 
-model RequestItemType {
-  id          Int          @id @default(autoincrement()) @db.UnsignedInt
-  requestId   Int?         @db.UnsignedInt
-  typeId      Int?         @db.UnsignedInt
-  RequestItem RequestItem? @relation(fields: [requestId], references: [id], onDelete: Cascade, map: "RequestItemType_ibfk_1")
-  RequestType RequestType? @relation(fields: [typeId], references: [id], onUpdate: NoAction, map: "RequestItemType_ibfk_2")
+model CustomerAddress {
+  id            Int       @id @default(autoincrement()) @db.UnsignedInt
+  customerId    Int?      @db.UnsignedInt
+  shopId        Int?      @db.UnsignedInt
+  buildingName  String?   @db.VarChar(255)
+  lotAddress    String?   @db.VarChar(255)
+  roadAddress   String?   @db.VarChar(255)
+  detailAddress String?   @db.VarChar(255)
+  placeName     String?   @db.VarChar(255)
+  phone         String?   @db.VarChar(255)
+  isDefault     Boolean?  @default(false)
+  receipient    String?   @db.VarChar(10)
+  createdAt     DateTime? @default(now()) @db.Timestamp(0)
+  updatedAt     DateTime? @default(now()) @db.Timestamp(0)
+  Customer      Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "CustomerAddress_ibfk_1")
+  Shop          Shop?     @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "CustomerAddress_ibfk_2")
 
-  @@index([requestId], map: "requestId")
-  @@index([typeId], map: "typeId")
+  @@index([customerId], map: "customerId")
+  @@index([shopId], map: "shopId")
 }
 
-model RequestType {
-  id              Int               @id @default(autoincrement()) @db.UnsignedInt
-  name            String?           @db.VarChar(10)
-  RequestItemType RequestItemType[]
+model OrderAddress {
+  id              Int            @id @default(autoincrement()) @db.UnsignedInt
+  uniqueId        Int?           @unique(map: "uniqueId")
+  requestId       Int?           @db.UnsignedInt
+  type            String?        @db.VarChar(10)
+  roadAddress     String?        @db.VarChar(255)
+  lotAddress      String?        @db.VarChar(255)
+  detailAddress   String?        @db.VarChar(255)
+  placeName       String?        @db.VarChar(255)
+  receipient      String?        @db.VarChar(255)
+  phone           String?        @db.VarChar(255)
+  dueDate         DateTime?      @db.Timestamp(0)
+  parcelNo        String?        @db.VarChar(255)
+  parcelCo        String?        @db.VarChar(255)
+  hasNotied       Boolean?       @default(false)
+  createdAt       DateTime?      @default(now()) @db.Timestamp(0)
+  updatedAt       DateTime?      @default(now()) @db.Timestamp(0)
+  Notification    Notification[]
+  sizeRequest     SizeRequest?   @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "OrderAddress_ibfk_1")
+  requestItemList RequestItem[]
+
+  @@index([requestId], map: "requestId")
+}
+
+model Notification {
+  id             Int           @id @default(autoincrement()) @db.UnsignedInt
+  requestId      Int?          @db.UnsignedInt
+  uniqueId       Int?          @unique(map: "uniqueId") @db.UnsignedInt
+  senderId       Int?          @db.UnsignedInt
+  orderAddressId Int?          @db.UnsignedInt
+  hasRead        Boolean?
+  createdAt      DateTime?     @default(now()) @db.Timestamp(0)
+  seller         Seller?       @relation(fields: [senderId], references: [id], onUpdate: NoAction, map: "Notification_ibfk_1")
+  orderAddress   OrderAddress? @relation(fields: [orderAddressId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "Notification_ibfk_2")
+  sizeRequest    SizeRequest?  @relation(fields: [requestId], references: [id], onUpdate: NoAction, map: "Notification_ibfk_3")
+
+  @@index([orderAddressId], map: "orderAddressId")
+  @@index([senderId], map: "senderId")
+  @@index([requestId], map: "requestId")
+}
+
+model ProductCodeMap {
+  id         Int     @id @default(autoincrement()) @db.UnsignedInt
+  brandId    Int?    @db.UnsignedInt
+  extractKey String? @db.VarChar(25)
+  name       String? @db.VarChar(50)
+  category   String? @db.VarChar(25)
+  brand      Brand?  @relation(fields: [brandId], references: [id], onUpdate: NoAction, map: "ProductCodeMap_ibfk_1")
+
+  @@index([brandId], map: "brandId")
 }

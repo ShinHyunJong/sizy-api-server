@@ -9,6 +9,8 @@ import { ShopModule } from './shop/shop.module';
 import { SellerModule } from './seller/seller.module';
 import { RequestItemModule } from './request-item/request-item.module';
 import { CustomerModule } from './customer/customer.module';
+import { OrderModule } from './order/order.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { CustomerModule } from './customer/customer.module';
     SellerModule,
     RequestItemModule,
     CustomerModule,
+    OrderModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService, AuthJwtStrategy, JwtService],

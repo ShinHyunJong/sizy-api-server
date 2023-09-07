@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Query, Put, Body, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  Put,
+  Body,
+  Post,
+  Delete,
+} from '@nestjs/common';
 import { SizeRequestService } from './size-request.service';
 
 @Controller('size-request')
@@ -38,5 +47,10 @@ export class SizeRequestController {
     @Body() sellerId: number,
   ) {
     return this.sizeRequestService.updateSellar(requestId, sellerId);
+  }
+
+  @Delete('/:requestId')
+  deleteRequest(@Param('requestId') requestId: number) {
+    return this.sizeRequestService.deleteSizeRequest(requestId);
   }
 }

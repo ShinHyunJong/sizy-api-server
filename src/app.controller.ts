@@ -11,9 +11,20 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  // @Get('/sms')
+  // sms() {
+  //   return this.appService.sms();
+  // }
+
   @UseGuards(JwtAuthGuard)
   @Get('/search')
   unionSerach(@Req() req, @Query('query') query: string) {
     return this.appService.unionSerach(req.user.id, query);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/code-map')
+  getCodeMap(@Req() req) {
+    return this.appService.getProductCodeMap(req.user.shopId);
   }
 }

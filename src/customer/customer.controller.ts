@@ -3,23 +3,18 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
+  Req,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { CustomerService } from './customer.service';
-import { CreateCustomerDto } from './dto/create-customer.dto';
-import { UpdateCustomerDto } from './dto/update-customer.dto';
+import { CreateAddressDto } from './dto/create-address.dto';
+import { JwtAuthGuard } from '@src/guards/jwt-auth.guard';
 
 @Controller('customer')
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
-
-  @Post()
-  create(@Body() createCustomerDto: CreateCustomerDto) {
-    return this.customerService.create(createCustomerDto);
-  }
 
   @Get('/profile/:customerId')
   findOne(
@@ -29,13 +24,43 @@ export class CustomerController {
     return this.customerService.findOne(customerId, shopId);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('/detail/:customerId')
+  getDetail(@Req() req, @Param('customerId') customerId: number) {
+    return this.customerService.getCustomerDetail(req.user.shopId, customerId);
+  }
   @Get('/search/:query')
   search(@Param('query') query: string) {
     return this.customerService.search(query);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.customerService.remove(+id);
+  @UseGuards(JwtAuthGuard)
+  @Get('/address/:customerId')
+  getAddress(@Req() req, @Param('customerId') customerId: number) {
+    return this.customerService.getAddressList(req.user.shopId, customerId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/')
+  postCustomer(@Req() req, @Body() body: { phone: string; name: string }) {
+    return this.customerService.postCustomer(
+      req.user.id,
+      body.phone,
+      body.name,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/address')
+  postAddress(
+    @Req() req,
+    @Body() body: CreateAddressDto,
+    @Query('isUpdatingName') isUpdatingName: boolean,
+  ) {
+    return this.customerService.postAddress(
+      req.user.shopId,
+      body,
+      isUpdatingName,
+    );
   }
 }

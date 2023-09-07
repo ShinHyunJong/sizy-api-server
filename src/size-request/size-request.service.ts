@@ -82,7 +82,11 @@ export class SizeRequestService {
           include: {
             _count: {
               select: {
-                sizeRequest: true,
+                sizeRequest: {
+                  where: {
+                    shopId: shopId,
+                  },
+                },
               },
             },
           },
@@ -114,5 +118,14 @@ export class SizeRequestService {
       },
     });
     return 'updated';
+  }
+
+  async deleteSizeRequest(requestId: number) {
+    await this.prismaService.sizeRequest.delete({
+      where: {
+        id: requestId,
+      },
+    });
+    return 'deleted';
   }
 }

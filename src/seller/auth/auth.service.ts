@@ -33,13 +33,13 @@ export class SellarAuthService {
    */
   async getTokens(
     sellarId: number,
-    email: string,
+    shopId: number,
     payload: string,
   ): Promise<Tokens> {
     const accessToken = await this.jwtService.signAsync(
       {
         id: sellarId,
-        email: payload,
+        shopId,
         payload,
       },
       {
@@ -107,6 +107,7 @@ export class SellarAuthService {
       },
       select: {
         id: true,
+        shopId: true,
         password: true,
         alias: true,
         email: true,
@@ -116,10 +117,11 @@ export class SellarAuthService {
     if (!seller) throw new HttpException('not exist', 406);
     const hashed = hash(password);
     if (seller.password !== hashed) throw new HttpException('not exist', 406);
-    const tokens = await this.getTokens(seller.id, seller.email, seller.alias);
+    const tokens = await this.getTokens(seller.id, seller.shopId, seller.alias);
     return {
       user: {
         id: seller.id,
+        shopId: seller.shopId,
         alias: seller.alias,
         name: seller.name,
         email: seller.email,

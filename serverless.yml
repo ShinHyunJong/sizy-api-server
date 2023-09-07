@@ -5,7 +5,7 @@ configValidationMode: error
 
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: nodejs16.x
   profile: tony
   stage: ${opt:stage, 'development'} # --stage development, production / default is development
   region: ap-northeast-2 # Lambda Edge는 us-east-1에만 배포 가능.
@@ -21,6 +21,9 @@ provider:
 # layers:
 #   libs:
 #     path: layer
+
+plugins:
+  - serverless-dotenv-plugin
 
 package:
   patterns:
