@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@src/prisma/prisma.service';
+import cryptoRandomString from 'crypto-random-string';
 
 @Injectable()
 export class SizeRequestService {
@@ -7,8 +8,9 @@ export class SizeRequestService {
 
   async prePostSizeRequest(shopId: number, body: { phone: string }) {
     // 번호 확인
-    const hasEnrolled = await this.prismaService.customer.findUnique({
+    const hasEnrolled = await this.prismaService.customer.findFirst({
       where: {
+        shopId,
         phone: body.phone,
       },
     });
@@ -25,6 +27,7 @@ export class SizeRequestService {
       data: {
         shopId,
         customerId: hasEnrolled.id,
+        uniqueId: cryptoRandomString({ length: 16 }),
       },
     });
     return { visitCount };
@@ -36,8 +39,9 @@ export class SizeRequestService {
   ) {
     //1. customer에 있는 지 확인
     let customerId;
-    const hasEnrolled = await this.prismaService.customer.findUnique({
+    const hasEnrolled = await this.prismaService.customer.findFirst({
       where: {
+        shopId,
         phone: body.phone,
       },
     });
@@ -56,9 +60,29 @@ export class SizeRequestService {
       data: {
         customerId,
         shopId,
+        uniqueId: cryptoRandomString({ length: 16 }),
       },
     });
     return 'created';
+  }
+
+  async getSizeRequestDetail(uniqueId: string) {
+    const requestDetail = await this.prismaService.sizeRequest.findUnique({
+      where: {
+        uniqueId,
+      },
+      include: {
+        seller: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        orderAddressList: true,
+        requestItemList: true,
+      },
+    });
+    return requestDetail;
   }
 
   async getSizeRequestList(shopId: number, isComplete?: boolean) {
@@ -72,6 +96,7 @@ export class SizeRequestService {
             requestItemList: true,
           },
         },
+        orderAddressList: true,
         seller: {
           select: {
             id: true,

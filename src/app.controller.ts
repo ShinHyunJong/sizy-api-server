@@ -19,12 +19,11 @@ export class AppController {
   @UseGuards(JwtAuthGuard)
   @Get('/search')
   unionSerach(@Req() req, @Query('query') query: string) {
-    return this.appService.unionSerach(req.user.id, query);
+    return this.appService.unionSerach(req.user.shopId, query);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('/code-map')
-  getCodeMap(@Req() req) {
-    return this.appService.getProductCodeMap(req.user.shopId);
+  getCodeMap(@Query() query: { shopId: string }) {
+    return this.appService.getProductCodeMap(Number(query.shopId));
   }
 }

@@ -1,5 +1,9 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import 'dayjs/locale/ko';
+import dayjs from 'dayjs';
+
+dayjs.locale('ko');
 
 import { AppModule } from './app.module';
 
@@ -8,7 +12,7 @@ import { AppModule } from './app.module';
 };
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 4001;
 
   app.useGlobalPipes(
     new ValidationPipe({

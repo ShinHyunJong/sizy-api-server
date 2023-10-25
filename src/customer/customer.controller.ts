@@ -7,6 +7,7 @@ import {
   Req,
   Query,
   UseGuards,
+  Put,
 } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { CreateAddressDto } from './dto/create-address.dto';
@@ -41,26 +42,37 @@ export class CustomerController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Put('/address/:customerAddressId')
+  updateAddress(
+    @Req() req,
+    @Param('customerAddressId') customerAddressId: number,
+    @Body() body: CreateAddressDto,
+  ) {
+    return this.customerService.updateAddress(Number(customerAddressId), body);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('/')
   postCustomer(@Req() req, @Body() body: { phone: string; name: string }) {
     return this.customerService.postCustomer(
-      req.user.id,
+      req.user.shopId,
       body.phone,
       body.name,
     );
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('/address')
-  postAddress(
-    @Req() req,
-    @Body() body: CreateAddressDto,
-    @Query('isUpdatingName') isUpdatingName: boolean,
+  @Put('/:customerId')
+  updateCustomer(
+    @Param('customerId') customerId: string,
+    @Body() body: { phone: string; name: string },
   ) {
-    return this.customerService.postAddress(
-      req.user.shopId,
-      body,
-      isUpdatingName,
-    );
+    return this.customerService.updateCustomer(Number(customerId), body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/address')
+  postAddress(@Req() req, @Body() body: CreateAddressDto) {
+    return this.customerService.postAddress(req.user.shopId, body);
   }
 }

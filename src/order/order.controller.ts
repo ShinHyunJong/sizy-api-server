@@ -7,6 +7,7 @@ import {
   Param,
   Put,
   Body,
+  Delete,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { JwtAuthGuard } from '@src/guards/jwt-auth.guard';
@@ -24,7 +25,7 @@ export class OrderController {
 
   @Get('/delivery/:orderId')
   getDeliveryStatus(
-    @Param('orderId') orderId: number,
+    @Param('orderId') orderId: string,
     @Query('parcelCo') parcelCo: string,
     @Query('parcelNo') parcelNo: string,
   ) {
@@ -33,6 +34,11 @@ export class OrderController {
       parcelCo,
       parcelNo,
     );
+  }
+
+  @Delete('/:orderAddressId')
+  deleteOrderAddress(@Param('orderAddressId') orderAddressId: number) {
+    return this.orderService.deleteOrderAddress(orderAddressId);
   }
 
   @Put('/delivery/:orderId')

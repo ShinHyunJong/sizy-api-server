@@ -2,6 +2,10 @@ import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateAddressDto {
   @IsNumber()
+  @IsOptional()
+  readonly id: number;
+
+  @IsNumber()
   readonly customerId: number;
 
   @IsString()

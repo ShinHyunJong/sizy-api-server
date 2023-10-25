@@ -45,7 +45,7 @@ export class OrderService {
   }
 
   async getOrderDeliveryStatus(
-    uniqueId: number,
+    uniqueId: string,
     parceCo: string,
     parcelNo: string,
   ) {
@@ -98,5 +98,14 @@ export class OrderService {
       data,
     });
     return orderAddress;
+  }
+
+  async deleteOrderAddress(orderAddressId: number) {
+    await this.prismaService.orderAddress.delete({
+      where: {
+        id: orderAddressId,
+      },
+    });
+    return 'deleted';
   }
 }

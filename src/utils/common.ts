@@ -16,7 +16,7 @@ export const generateRandomNumber = (length: number) => {
 };
 
 export const generateId = (prefixNum = 9): number => {
-  const randomNumber = generateRandomNumber(7);
+  const randomNumber = generateRandomNumber(8);
   const prefixed = `${prefixNum}${randomNumber}`;
   return Number(prefixed);
 };

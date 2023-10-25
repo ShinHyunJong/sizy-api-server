@@ -17,15 +17,20 @@ model Brand {
 
 model Customer {
   id                  Int               @id @default(autoincrement()) @db.UnsignedInt
+  shopId              Int?              @db.UnsignedInt
   name                String?           @db.VarChar(4)
-  phone               String?           @unique(map: "phone") @db.VarChar(16)
+  phone               String?           @db.VarChar(16)
   isMarketingAgree    Boolean?
+  eventAgree          Boolean?
   createdAt           DateTime?         @default(now()) @db.Timestamp(0)
   updatedAt           DateTime?         @default(now()) @db.Timestamp(0)
+  Shop                Shop?             @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "Customer_ibfk_1")
   customerAddressList CustomerAddress[]
   sizeRequest         SizeRequest[]
 
   @@index([phone], map: "phone_index")
+  @@index([name], map: "customer_name_index")
+  @@index([shopId], map: "shopId")
 }
 
 model CustomerTag {
@@ -59,6 +64,8 @@ model RequestItem {
   alterMount     Float?        @db.Float
   isReorder      Boolean?
   isReady        Boolean?
+  requestCount   Int?          @db.UnsignedInt
+  arrivedCount   Int?          @db.UnsignedInt
   orderAddress   OrderAddress? @relation(fields: [orderAddressId], references: [id], onUpdate: NoAction, map: "RequestItem_ibfk_2")
   sizeRequest    SizeRequest?  @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "RequestItem_ibfk_1")
 
@@ -70,16 +77,15 @@ model RequestItem {
 }
 
 model Seller {
-  id              Int            @id @default(autoincrement()) @db.UnsignedInt
-  shopId          Int?           @db.UnsignedInt
-  name            String?        @db.VarChar(11)
-  position        String?        @db.VarChar(11)
-  alias           String         @unique(map: "alias") @default("") @db.VarChar(20)
-  email           String         @unique(map: "email") @default("") @db.VarChar(50)
-  password        String         @default("") @db.VarChar(255)
+  id              Int           @id @default(autoincrement()) @db.UnsignedInt
+  shopId          Int?          @db.UnsignedInt
+  name            String?       @db.VarChar(11)
+  position        String?       @db.VarChar(11)
   role            Int?
-  Notification    Notification[]
-  shop            Shop?          @relation(fields: [shopId], references: [id], onUpdate: NoAction, map: "Seller_ibfk_1")
+  alias           String        @unique(map: "alias") @default("") @db.VarChar(20)
+  email           String        @unique(map: "email") @default("") @db.VarChar(50)
+  profileImg      String?       @db.VarChar(255)
+  shop            Shop?         @relation(fields: [shopId], references: [id], onUpdate: NoAction, map: "Seller_ibfk_1")
   sizeRequestList SizeRequest[]
 
   @@index([shopId], map: "shopId")
@@ -88,14 +94,19 @@ model Seller {
 model Shop {
   id              Int               @id @default(autoincrement()) @db.UnsignedInt
   brandId         Int?              @db.UnsignedInt
+  email           String?           @unique(map: "email") @db.VarChar(255)
   alias           String            @unique(map: "alias") @default("") @db.VarChar(20)
   branch          String?           @db.VarChar(20)
   parcelCo        String?           @db.VarChar(20)
   phone           String?           @db.VarChar(20)
   detail          String?           @db.VarChar(20)
   building        String?           @db.VarChar(30)
+  password        String?           @db.VarChar(255)
+  createdAt       DateTime?         @default(now()) @db.Timestamp(0)
+  updatedAt       DateTime?         @default(now()) @db.Timestamp(0)
+  Customer        Customer[]
   CustomerAddress CustomerAddress[]
-  Seller          Seller[]
+  sellerList      Seller[]
   brand           Brand?            @relation(fields: [brandId], references: [id], onUpdate: NoAction, map: "Shop_ibfk_1")
   sizeRequestList SizeRequest[]
 
@@ -103,18 +114,19 @@ model Shop {
 }
 
 model SizeRequest {
-  id              Int            @id @default(autoincrement()) @db.UnsignedInt
-  shopId          Int            @db.UnsignedInt
-  customerId      Int            @db.UnsignedInt
-  sellerId        Int?           @db.UnsignedInt
-  createdAt       DateTime?      @default(now()) @db.Timestamp(0)
-  updatedAt       DateTime?      @default(now()) @db.Timestamp(0)
-  Notification    Notification[]
-  OrderAddress    OrderAddress[]
-  requestItemList RequestItem[]
-  shop            Shop           @relation(fields: [shopId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_1")
-  customer        Customer       @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_2")
-  seller          Seller?        @relation(fields: [sellerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_3")
+  id               Int            @id @default(autoincrement()) @db.UnsignedInt
+  uniqueId         String?        @unique(map: "uniqueId") @db.VarChar(16)
+  shopId           Int            @db.UnsignedInt
+  customerId       Int            @db.UnsignedInt
+  sellerId         Int?           @db.UnsignedInt
+  createdAt        DateTime?      @default(now()) @db.Timestamp(0)
+  updatedAt        DateTime?      @default(now()) @db.Timestamp(0)
+  Notification     Notification[]
+  orderAddressList OrderAddress[]
+  requestItemList  RequestItem[]
+  shop             Shop           @relation(fields: [shopId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_1")
+  customer         Customer       @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_2")
+  seller           Seller?        @relation(fields: [sellerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SizeRequest_ibfk_3")
 
   @@index([customerId], map: "customerId")
   @@index([sellerId], map: "sellerId")
@@ -149,7 +161,7 @@ model CustomerAddress {
 
 model OrderAddress {
   id              Int            @id @default(autoincrement()) @db.UnsignedInt
-  uniqueId        Int?           @unique(map: "uniqueId")
+  uniqueId        String?        @unique(map: "uniqueId") @db.VarChar(16)
   requestId       Int?           @db.UnsignedInt
   type            String?        @db.VarChar(10)
   roadAddress     String?        @db.VarChar(255)
@@ -173,18 +185,17 @@ model OrderAddress {
 
 model Notification {
   id             Int           @id @default(autoincrement()) @db.UnsignedInt
+  type           String?       @db.VarChar(10)
   requestId      Int?          @db.UnsignedInt
-  uniqueId       Int?          @unique(map: "uniqueId") @db.UnsignedInt
-  senderId       Int?          @db.UnsignedInt
+  uniqueId       String?       @unique(map: "uniqueId") @db.VarChar(16)
   orderAddressId Int?          @db.UnsignedInt
   hasRead        Boolean?
+  isDummy        Boolean?
   createdAt      DateTime?     @default(now()) @db.Timestamp(0)
-  seller         Seller?       @relation(fields: [senderId], references: [id], onUpdate: NoAction, map: "Notification_ibfk_1")
   orderAddress   OrderAddress? @relation(fields: [orderAddressId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "Notification_ibfk_2")
   sizeRequest    SizeRequest?  @relation(fields: [requestId], references: [id], onUpdate: NoAction, map: "Notification_ibfk_3")
 
   @@index([orderAddressId], map: "orderAddressId")
-  @@index([senderId], map: "senderId")
   @@index([requestId], map: "requestId")
 }
 

@@ -14,6 +14,11 @@ import { SizeRequestService } from './size-request.service';
 export class SizeRequestController {
   constructor(private readonly sizeRequestService: SizeRequestService) {}
 
+  @Get('/detail/:requestId')
+  getSizeRequestDetail(@Param('requestId') requestId: string) {
+    return this.sizeRequestService.getSizeRequestDetail(requestId);
+  }
+
   @Get(':shopId')
   findOne(
     @Param('shopId') shopId: number,

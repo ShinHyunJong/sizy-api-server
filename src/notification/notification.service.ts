@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { PrismaService } from '@src/prisma/prisma.service';
-import { generateId } from '@src/utils/common';
 import { parcelAxios } from '@src/utils/parcel';
 import { sendKakao } from '@src/utils/biztalk';
+import { parcelCoList } from '@src/constants/parcel.constant';
+import cryptoRandomString from 'crypto-random-string';
 
 @Injectable()
 export class NotificationService {
@@ -12,8 +13,28 @@ export class NotificationService {
   async getNotificationList(shopId: number) {
     const notificationList = await this.prismaService.notification.findMany({
       where: {
+        type: 'shipment',
         sizeRequest: {
           shopId,
+        },
+      },
+      include: {
+        orderAddress: {
+          include: {
+            requestItemList: {
+              select: {
+                id: true,
+                productCode: true,
+                color: true,
+                productSize: true,
+              },
+            },
+            sizeRequest: {
+              include: {
+                seller: true,
+              },
+            },
+          },
         },
       },
       orderBy: {
@@ -23,7 +44,7 @@ export class NotificationService {
     return notificationList;
   }
 
-  async getOrderDeliveryStatus(uniqueId: number) {
+  async getOrderDeliveryStatus(uniqueId: string) {
     const notification = await this.prismaService.notification.findUnique({
       where: {
         uniqueId,
@@ -65,10 +86,12 @@ export class NotificationService {
 
     let deliveryStatus = null;
     if (notification.orderAddress.type !== 'pickup') {
-      const result = await parcelAxios.get(
-        `/carriers/${notification.orderAddress.parcelCo}/tracks/${notification.orderAddress.parcelNo}`,
-      );
-      deliveryStatus = result.data;
+      try {
+        const result = await parcelAxios.get(
+          `/carriers/${notification.orderAddress.parcelCo}/tracks/${notification.orderAddress.parcelNo}`,
+        );
+        deliveryStatus = result.data;
+      } catch (error) {}
     }
 
     return {
@@ -77,12 +100,12 @@ export class NotificationService {
     };
   }
 
-  async create(userId: number, createNotificationDto: CreateNotificationDto) {
+  async create(createNotificationDto: CreateNotificationDto, type: string) {
     const createdNoti = await this.prismaService.notification.create({
       data: {
-        senderId: userId,
         hasRead: false,
-        uniqueId: generateId(),
+        type,
+        uniqueId: cryptoRandomString({ length: 16 }),
         ...createNotificationDto,
       },
       include: {
@@ -114,8 +137,10 @@ export class NotificationService {
     const { brand } = shop;
     const shopName = `${brand.name} ${shop.branch}`;
     const sellerName = `${seller.name} ${seller.position}`;
-    const addressName = `${orderAddress.lotAddress} ${orderAddress.detailAddress}`;
-    const parcelCo = orderAddress.parcelCo;
+    const addressName = `${orderAddress.placeName || '버튼 눌러 확인'}`;
+    const parcelCo =
+      parcelCoList.find((x) => x.id === orderAddress.parcelCo).name ||
+      '버튼 눌러 확인';
     const parcelNo = orderAddress.parcelNo;
     const shopLocation = `${shop.building} ${shop.detail}`;
     const shopPhone = shop.phone;
@@ -128,7 +153,7 @@ export class NotificationService {
           {
             recipientNo: orderAddress.phone,
             templateParameter: {
-              receipient: orderAddress.receipient,
+              receipient: orderAddress.receipient || '고객',
               shopName,
               sellerName,
               shopLocation,
@@ -146,7 +171,7 @@ export class NotificationService {
           {
             recipientNo: orderAddress.phone,
             templateParameter: {
-              receipient: orderAddress.receipient,
+              receipient: orderAddress.receipient || '고객',
               shopName,
               sellerName,
               shopPhone,
@@ -161,6 +186,16 @@ export class NotificationService {
       );
     }
 
-    return 'This action adds a new notification';
+    return createdNoti;
+  }
+
+  async postDummyNotification(body: CreateNotificationDto) {
+    await this.prismaService.notification.create({
+      data: {
+        requestId: body.requestId,
+        orderAddressId: body.orderAddressId,
+        isDummy: true,
+      },
+    });
   }
 }

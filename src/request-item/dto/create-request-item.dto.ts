@@ -41,6 +41,10 @@ class RequestItemDto {
   @IsOptional()
   @IsString()
   readonly alterComment: string;
+
+  @IsOptional()
+  @IsBoolean()
+  readonly isReorder: boolean;
 }
 
 export class OrderAddress {

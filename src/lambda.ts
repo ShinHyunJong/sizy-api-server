@@ -1,3 +1,6 @@
+import 'dayjs/locale/ko';
+import dayjs from 'dayjs';
+
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { configure as serverlessExpress } from '@vendia/serverless-express';
@@ -8,6 +11,8 @@ let cachedServer;
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
 };
+
+dayjs.locale('ko');
 
 export const handler = async (event, context) => {
   if (!cachedServer) {

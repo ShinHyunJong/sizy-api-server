@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 
-import csv from 'csv-parser';
-import fs from 'fs';
-import { content } from './constants';
-import { sendSMS } from './utils/sms';
-import { title } from 'process';
+// import csv from 'csv-parser';
+// import fs from 'fs';
+// import { content } from './constants';
+// import { sendSMS } from './utils/sms';
 
 @Injectable()
 export class AppService {
@@ -53,35 +52,29 @@ export class AppService {
     return codeMapList;
   }
 
-  async unionSerach(sellerId: number, query: string) {
-    const seller = await this.prismaService.seller.findUnique({
-      where: {
-        id: sellerId,
-      },
-      select: {
-        shopId: true,
-      },
-    });
-
-    const result = await this.prismaService.$queryRaw`SELECT 
+  async unionSerach(shopId: number, query: string) {
+    const result: any[] = await this.prismaService.$queryRaw`SELECT 
       RequestItem.id as id, phone, productCode, productSize, comment, count,
+      SizeRequest.shopId, Customer.name, Customer.id as customerId,
       SizeRequest.createdAt as createdAt,
       MATCH(productCode) AGAINST(${query}) as productCodeScore,
       MATCH(productSize) AGAINST(${query}) as productSizeScore,
       MATCH(comment) AGAINST(${query}) as commentScore,
-      MATCH(Customer.phone) AGAINST(${query}) as phoneScore
+      MATCH(Customer.phone) AGAINST(${query}) as phoneScore,
+      MATCH(Customer.name) AGAINST(${query}) as nameScore
     FROM 
       RequestItem 
       LEFT JOIN SizeRequest ON requestId = SizeRequest.id 
       LEFT JOIN Customer ON customerId = Customer.id 
     WHERE 
-      SizeRequest.shopId = ${seller.shopId} AND
+      SizeRequest.shopId = ${shopId} AND
       MATCH(
         productCode
       ) AGAINST(${query} IN BOOLEAN mode) 
       OR MATCH(productSize) AGAINST(${query} IN BOOLEAN MODE)
       OR MATCH(comment) AGAINST(${query} IN BOOLEAN MODE)
       OR MATCH(Customer.phone) AGAINST(${query} IN BOOLEAN MODE)
+      OR MATCH(Customer.name) AGAINST(${query} IN BOOLEAN MODE)
     ORDER BY 
     (productCodeScore + productSizeScore + commentScore + phoneScore) DESC,
     phoneScore DESC,
@@ -90,6 +83,8 @@ export class AppService {
     commentScore DESC,
     createdAt DESC
     `;
-    return result;
+
+    const filtered = result.filter((x) => Number(x.shopId) === shopId);
+    return filtered;
   }
 }

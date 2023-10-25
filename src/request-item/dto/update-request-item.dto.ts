@@ -52,12 +52,32 @@ class RequestItemDto {
   @IsOptional()
   @IsBoolean()
   readonly isReady: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  readonly requestCount: number;
+
+  @IsOptional()
+  @IsNumber()
+  readonly arrivedCount: number;
+
+  @IsOptional()
+  @IsBoolean()
+  readonly isReorder: boolean;
 }
 
 export class OrderAddress {
   @IsOptional()
   @IsNumber()
   readonly id: number;
+
+  @IsOptional()
+  @IsNumber()
+  readonly orderAddressId: number;
+
+  @IsOptional()
+  @IsString()
+  readonly uniqueId: string;
 
   @IsOptional()
   @IsString()

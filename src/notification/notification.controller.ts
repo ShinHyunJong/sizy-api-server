@@ -22,13 +22,28 @@ export class NotificationController {
   }
 
   @Get('/delivery/:notificationId')
-  getDeliveryStatus(@Param('notificationId') notificationId: number) {
+  getDeliveryStatus(@Param('notificationId') notificationId: string) {
     return this.notificationService.getOrderDeliveryStatus(notificationId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Req() req, @Body() createNotificationDto: CreateNotificationDto) {
-    return this.notificationService.create(req.user.id, createNotificationDto);
+  create(
+    @Req() req,
+    @Body() createNotificationDto: CreateNotificationDto,
+    @Query('type') type = 'shipment',
+  ) {
+    return this.notificationService.create(createNotificationDto, type);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/dummy')
+  createDummy(
+    @Req() req,
+    @Body() createNotificationDto: CreateNotificationDto,
+  ) {
+    return this.notificationService.postDummyNotification(
+      createNotificationDto,
+    );
   }
 }

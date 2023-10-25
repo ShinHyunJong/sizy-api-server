@@ -50,8 +50,20 @@ export class RequestItemController {
     return this.requestItemService.update(updateRequestItemDto);
   }
 
+  @Put('/order-status/:itemId')
+  updateItemStatusCount(
+    @Body() body: { requestCount: number; arrivedCount: number },
+    @Param('itemId') itemId: number,
+  ) {
+    return this.requestItemService.updateStatusCount(
+      itemId,
+      body.requestCount,
+      body.arrivedCount,
+    );
+  }
+
   @UseGuards(JwtAuthGuard)
-  @Put('/:itemId')
+  @Put('/ready/:itemId')
   updateIsReady(
     @Body() body: { isReady: boolean },
     @Param('itemId') itemId: number,

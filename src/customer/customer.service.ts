@@ -75,6 +75,13 @@ export class CustomerService {
         shopId,
       },
       include: {
+        seller: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        orderAddressList: true,
         customer: true,
         requestItemList: true,
       },
@@ -85,11 +92,7 @@ export class CustomerService {
     };
   }
 
-  async postAddress(
-    shopId: number,
-    createAddressDto: CreateAddressDto,
-    isUpdatingName: boolean,
-  ) {
+  async postAddress(shopId: number, createAddressDto: CreateAddressDto) {
     const customer = await this.prismaService.customer.findUnique({
       where: {
         id: createAddressDto.customerId,
@@ -99,17 +102,6 @@ export class CustomerService {
         name: true,
       },
     });
-    const isNameEmpty = !customer.name || customer.name === '';
-    if (isNameEmpty && isUpdatingName) {
-      await this.prismaService.customer.update({
-        where: {
-          id: createAddressDto.customerId,
-        },
-        data: {
-          name: createAddressDto.receipient,
-        },
-      });
-    }
 
     const exisingAddress = await this.prismaService.customerAddress.count({
       where: {
@@ -125,20 +117,11 @@ export class CustomerService {
     return result;
   }
 
-  async postCustomer(sellerId: number, phone: string, name: string) {
-    const seller = await this.prismaService.seller.findUnique({
-      where: {
-        id: sellerId,
-      },
-      select: {
-        id: true,
-        shopId: true,
-      },
-    });
-
-    const exisingCustomer = await this.prismaService.customer.findUnique({
+  async postCustomer(shopId: number, phone: string, name: string) {
+    const exisingCustomer = await this.prismaService.customer.findFirst({
       where: {
         phone,
+        shopId,
       },
       select: {
         id: true,
@@ -148,7 +131,7 @@ export class CustomerService {
           select: {
             sizeRequest: {
               where: {
-                shopId: seller.shopId,
+                shopId,
               },
             },
           },
@@ -161,6 +144,7 @@ export class CustomerService {
         data: {
           phone,
           name,
+          shopId,
         },
         select: {
           id: true,
@@ -172,6 +156,30 @@ export class CustomerService {
     } else {
       return exisingCustomer;
     }
+  }
+
+  async updateCustomer(id: number, body: { phone: string; name: string }) {
+    const { phone, name } = body;
+    const updated = await this.prismaService.customer.update({
+      where: {
+        id,
+      },
+      data: {
+        phone,
+        name,
+      },
+    });
+    return updated;
+  }
+
+  async updateAddress(id: number, body: CreateAddressDto) {
+    const updated = await this.prismaService.customerAddress.update({
+      where: {
+        id,
+      },
+      data: body,
+    });
+    return updated;
   }
 
   remove(id: number) {

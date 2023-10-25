@@ -2,11 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { CreateRequestItemDto } from './dto/create-request-item.dto';
 import { UpdateRequestItemDto } from './dto/update-request-item.dto';
 import { PrismaService } from '@src/prisma/prisma.service';
-import { generateId } from '@src/utils/common';
+import cryptoRandomString from 'crypto-random-string';
+import { sendKakao } from '@src/utils/biztalk';
+import dayjs from 'dayjs';
+import { NotificationService } from '@src/notification/notification.service';
 
 @Injectable()
 export class RequestItemService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private notiService: NotificationService,
+  ) {}
 
   async searchCode(shopId: number, query: string) {
     const shop = await this.prismaService.shop.findUnique({
@@ -97,24 +103,25 @@ export class RequestItemService {
 
   async create(shopId: number, createRequestItemDto: CreateRequestItemDto) {
     //새로 만든 고객일 경우, 등록까지 진행 후 item 생성
+    let sizeRequestId;
+    let orderAddressId;
     if (createRequestItemDto.customerId) {
-      let orderAddressId = null;
       //1. 요청 등록
       const createdRequest = await this.prismaService.sizeRequest.create({
         data: {
           customerId: createRequestItemDto.customerId,
           sellerId: createRequestItemDto.sellerId,
           shopId,
+          uniqueId: cryptoRandomString({ length: 16 }),
         },
       });
-
       //2. 주문일 경우 주문 주소 등록
       if (createRequestItemDto.orderAddress) {
         const orderAddress = await this.prismaService.orderAddress.create({
           data: {
             ...createRequestItemDto.orderAddress,
             requestId: createdRequest.id,
-            uniqueId: generateId(),
+            uniqueId: cryptoRandomString({ length: 16 }),
           },
         });
         orderAddressId = orderAddress.id;
@@ -126,22 +133,21 @@ export class RequestItemService {
           orderAddressId,
         };
       });
-
       //3. 아이템 등록
       await this.prismaService.requestItem.createMany({
         data: requestItemList,
       });
+      sizeRequestId = createdRequest.id;
     } else {
-      let orderAddressId = null;
-
       const requestId = createRequestItemDto.requestItemList[0].requestId;
+      sizeRequestId = requestId;
 
       //1. 주문일 경우 주문 주소 등록
       if (createRequestItemDto.orderAddress) {
         const orderAddress = await this.prismaService.orderAddress.create({
           data: {
             ...createRequestItemDto.orderAddress,
-            uniqueId: generateId(),
+            uniqueId: cryptoRandomString({ length: 16 }),
             requestId,
           },
         });
@@ -169,9 +175,76 @@ export class RequestItemService {
       await this.prismaService.requestItem.createMany({
         data: requestItemList,
       });
-
-      return 'created';
     }
+
+    if (orderAddressId) {
+      const sizeRequest = await this.prismaService.sizeRequest.findUnique({
+        where: {
+          id: sizeRequestId,
+        },
+        include: {
+          orderAddressList: true,
+          customer: true,
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              position: true,
+            },
+          },
+          shop: {
+            select: {
+              branch: true,
+              brand: {
+                select: {
+                  name: true,
+                },
+              },
+              phone: true,
+            },
+          },
+        },
+      });
+
+      const { shop, seller, customer } = sizeRequest;
+      const isPickUp = createRequestItemDto.orderAddress.type === 'pickup';
+
+      const shopName = `${shop.brand.name} ${shop.branch}`;
+      const shopPhone = `${shop.phone}`;
+      const dueDate = `${dayjs(
+        createRequestItemDto.orderAddress.dueDate,
+      ).format('YYYY-MM-DD')}`;
+      const sellerName = `${seller.name} ${seller.position}`;
+      const noti = await this.prismaService.notification.create({
+        data: {
+          uniqueId: cryptoRandomString({ length: 16 }),
+          requestId: sizeRequest.id,
+          orderAddressId,
+          type: 'enroll',
+          hasRead: false,
+        },
+      });
+      const link = `store.sizy.co.kr/notification/${noti.uniqueId}`;
+      await sendKakao(
+        [
+          {
+            recipientNo: isPickUp
+              ? customer.phone
+              : createRequestItemDto.orderAddress.phone,
+            templateParameter: {
+              receipient: createRequestItemDto.orderAddress.receipient,
+              shopName,
+              shopPhone,
+              dueDate,
+              sellerName,
+              link,
+            },
+          },
+        ],
+        'enroll-complete',
+      );
+    }
+    return 'created';
   }
 
   async update(body: UpdateRequestItemDto) {
@@ -184,15 +257,37 @@ export class RequestItemService {
         sellerId,
       },
     });
+    let orderAddressId = null;
     if (orderAddress) {
-      await this.prismaService.orderAddress.update({
-        where: {
-          id: orderAddress.id,
-        },
-        data: {
-          ...orderAddress,
-        },
-      });
+      const orderAddressCopied = { ...orderAddress };
+      delete orderAddressCopied.orderAddressId;
+      delete orderAddressCopied.id;
+      if (orderAddress.orderAddressId) {
+        const updated = await this.prismaService.orderAddress.update({
+          where: {
+            id: orderAddress.orderAddressId,
+          },
+          select: {
+            id: true,
+          },
+          data: {
+            ...orderAddressCopied,
+          },
+        });
+        orderAddressId = updated.id;
+      } else {
+        const created = await this.prismaService.orderAddress.create({
+          select: {
+            id: true,
+          },
+          data: {
+            uniqueId: cryptoRandomString({ length: 16 }),
+            requestId,
+            ...orderAddressCopied,
+          },
+        });
+        orderAddressId = created.id;
+      }
     }
     await Promise.all(
       requestItemList.map(async (x) => {
@@ -208,6 +303,7 @@ export class RequestItemService {
             },
             data: {
               ...x,
+              orderAddressId: orderAddressId || null,
             },
           });
         } else {
@@ -229,6 +325,23 @@ export class RequestItemService {
       },
       data: {
         isReady,
+      },
+    });
+    return 'updated';
+  }
+
+  async updateStatusCount(
+    id: number,
+    requestCount: number,
+    arrivedCount: number,
+  ) {
+    await this.prismaService.requestItem.update({
+      where: {
+        id,
+      },
+      data: {
+        requestCount,
+        arrivedCount,
       },
     });
     return 'updated';
