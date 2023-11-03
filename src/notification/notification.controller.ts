@@ -11,6 +11,7 @@ import {
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { JwtAuthGuard } from '@src/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '@src/guards/jwt-optional.guard';
 
 @Controller('notification')
 export class NotificationController {
@@ -21,9 +22,16 @@ export class NotificationController {
     return this.notificationService.getNotificationList(req.user.shopId);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get('/delivery/:notificationId')
-  getDeliveryStatus(@Param('notificationId') notificationId: string) {
-    return this.notificationService.getOrderDeliveryStatus(notificationId);
+  getDeliveryStatus(
+    @Req() req,
+    @Param('notificationId') notificationId: string,
+  ) {
+    return this.notificationService.getOrderDeliveryStatus(
+      req.user?.shopId || null,
+      notificationId,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

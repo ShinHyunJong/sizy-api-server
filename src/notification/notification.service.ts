@@ -44,7 +44,10 @@ export class NotificationService {
     return notificationList;
   }
 
-  async getOrderDeliveryStatus(uniqueId: string) {
+  async getOrderDeliveryStatus(
+    shopId: number | undefined | null,
+    uniqueId: string,
+  ) {
     const notification = await this.prismaService.notification.findUnique({
       where: {
         uniqueId,
@@ -73,7 +76,7 @@ export class NotificationService {
         },
       },
     });
-    if (!notification.hasRead) {
+    if (!shopId && !notification.hasRead) {
       await this.prismaService.notification.update({
         where: {
           uniqueId,

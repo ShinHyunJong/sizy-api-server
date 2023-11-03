@@ -6,7 +6,7 @@ configValidationMode: error
 provider:
   name: aws
   runtime: nodejs16.x
-  profile: tony
+  profile: default
   stage: ${opt:stage, 'development'} # --stage development, production / default is development
   region: ap-northeast-2 # Lambda Edge는 us-east-1에만 배포 가능.
   versionFunctions: true
@@ -16,7 +16,6 @@ provider:
   tags:
     Service: ${self:service}
     Environment: ${self:provider.stage}
-
 
 # layers:
 #   libs:
@@ -48,4 +47,3 @@ functions:
       - http:
           path: /{proxy+}
           method: ANY
-        

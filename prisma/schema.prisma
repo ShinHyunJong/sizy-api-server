@@ -92,23 +92,27 @@ model Seller {
 }
 
 model Shop {
-  id              Int               @id @default(autoincrement()) @db.UnsignedInt
-  brandId         Int?              @db.UnsignedInt
-  email           String?           @unique(map: "email") @db.VarChar(255)
-  alias           String            @unique(map: "alias") @default("") @db.VarChar(20)
-  branch          String?           @db.VarChar(20)
-  parcelCo        String?           @db.VarChar(20)
-  phone           String?           @db.VarChar(20)
-  detail          String?           @db.VarChar(20)
-  building        String?           @db.VarChar(30)
-  password        String?           @db.VarChar(255)
-  createdAt       DateTime?         @default(now()) @db.Timestamp(0)
-  updatedAt       DateTime?         @default(now()) @db.Timestamp(0)
-  Customer        Customer[]
-  CustomerAddress CustomerAddress[]
-  sellerList      Seller[]
-  brand           Brand?            @relation(fields: [brandId], references: [id], onUpdate: NoAction, map: "Shop_ibfk_1")
-  sizeRequestList SizeRequest[]
+  id               Int               @id @default(autoincrement()) @db.UnsignedInt
+  brandId          Int?              @db.UnsignedInt
+  email            String?           @unique(map: "email") @db.VarChar(255)
+  alias            String            @unique(map: "alias") @default("") @db.VarChar(20)
+  branch           String?           @db.VarChar(20)
+  parcelCo         String?           @db.VarChar(20)
+  phone            String?           @db.VarChar(20)
+  detail           String?           @db.VarChar(20)
+  building         String?           @db.VarChar(30)
+  password         String?           @db.VarChar(255)
+  billingKey       String?           @db.VarChar(255)
+  cardRegisteredAt DateTime?         @db.Timestamp(0)
+  createdAt        DateTime?         @default(now()) @db.Timestamp(0)
+  updatedAt        DateTime?         @default(now()) @db.Timestamp(0)
+  isActive         Boolean?          @default(true)
+  isTrial          Boolean?
+  Customer         Customer[]
+  CustomerAddress  CustomerAddress[]
+  sellerList       Seller[]
+  brand            Brand?            @relation(fields: [brandId], references: [id], onUpdate: NoAction, map: "Shop_ibfk_1")
+  sizeRequestList  SizeRequest[]
 
   @@index([brandId], map: "brandId")
 }

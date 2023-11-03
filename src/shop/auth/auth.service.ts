@@ -55,6 +55,7 @@ export class ShopAuthService {
         phone: true,
         branch: true,
         brand: true,
+        createdAt: true,
         sellerList: true,
       },
     });
