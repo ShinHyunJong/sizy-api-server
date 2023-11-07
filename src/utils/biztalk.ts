@@ -1,27 +1,5 @@
 import axios, { AxiosRequestConfig } from 'axios';
 
-interface SendSMSResponse {
-  header: {
-    resultCode: number;
-    resultMessage: string;
-    isSuccessful: boolean;
-  };
-  body: {
-    data: {
-      requestId: string;
-      statusCode: string;
-      senderGroupingKey: 'SenderGroupingKey';
-      sendResultList: {
-        recipientNo: string;
-        resultCode: number;
-        resultMessage: string;
-        recipientSeq: number;
-        recipientGroupingKey: 'RecipientGroupingKey';
-      }[];
-    };
-  };
-}
-
 type Recipient = {
   recipientNo: string;
   templateParameter: any;
@@ -30,7 +8,7 @@ type Recipient = {
 export const sendKakao = async (
   recipientList: Recipient[],
   templateCode: string,
-): Promise<SendSMSResponse> => {
+): Promise<any> => {
   const options: AxiosRequestConfig = {
     method: 'POST',
     headers: {
@@ -46,6 +24,5 @@ export const sendKakao = async (
   };
 
   const response = await axios(options);
-  console.log(response.data.message.sendResults);
   return response.data;
 };

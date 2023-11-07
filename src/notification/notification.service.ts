@@ -151,7 +151,7 @@ export class NotificationService {
 
     // 배송
     if (orderAddress.type === 'pickup') {
-      await sendKakao(
+      const result = await sendKakao(
         [
           {
             recipientNo: orderAddress.phone,
@@ -167,9 +167,10 @@ export class NotificationService {
         ],
         'pickup-complete',
       );
+      return result;
     }
     if (orderAddress.type === 'parcel') {
-      await sendKakao(
+      const result = await sendKakao(
         [
           {
             recipientNo: orderAddress.phone,
@@ -187,9 +188,10 @@ export class NotificationService {
         ],
         'parcel-complete',
       );
+      return result;
+    } else {
+      return createdNoti;
     }
-
-    return createdNoti;
   }
 
   async postDummyNotification(body: CreateNotificationDto) {
