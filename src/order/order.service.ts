@@ -108,4 +108,17 @@ export class OrderService {
     });
     return 'deleted';
   }
+
+  async updatePickupStatus(orderAddressId: number) {
+    const orderAddress = await this.prismaService.orderAddress.update({
+      where: {
+        id: orderAddressId,
+      },
+      data: {
+        hasPickedup: true,
+        pickedupAt: new Date(),
+      },
+    });
+    return orderAddress;
+  }
 }

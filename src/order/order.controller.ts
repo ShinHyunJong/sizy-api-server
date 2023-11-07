@@ -49,4 +49,9 @@ export class OrderController {
   ) {
     return this.orderService.updateOrderAddress(orderId, body);
   }
+
+  @Put('/pickup/:orderId')
+  updatePickupStatus(@Param('orderId') orderId: number) {
+    return this.orderService.updatePickupStatus(orderId);
+  }
 }
