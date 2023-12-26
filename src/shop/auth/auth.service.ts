@@ -56,7 +56,11 @@ export class ShopAuthService {
         branch: true,
         brand: true,
         createdAt: true,
-        sellerList: true,
+        sellerList: {
+          where: {
+            isActive: true,
+          },
+        },
       },
     });
 

@@ -10,7 +10,15 @@ import cryptoRandomString from 'crypto-random-string';
 export class NotificationService {
   constructor(private prismaService: PrismaService) {}
 
-  async getNotificationList(shopId: number) {
+  async getNotificationList(shopId: number, skip: number, take: number) {
+    const totalCount = await this.prismaService.notification.count({
+      where: {
+        type: 'shipment',
+        sizeRequest: {
+          shopId,
+        },
+      },
+    });
     const notificationList = await this.prismaService.notification.findMany({
       where: {
         type: 'shipment',
@@ -18,6 +26,8 @@ export class NotificationService {
           shopId,
         },
       },
+      skip,
+      take,
       include: {
         orderAddress: {
           include: {
@@ -41,7 +51,10 @@ export class NotificationService {
         createdAt: 'desc',
       },
     });
-    return notificationList;
+    return {
+      totalCount,
+      notificationList,
+    };
   }
 
   async getOrderDeliveryStatus(

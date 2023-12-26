@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
+import { getLatestCommit } from './utils/git';
+import { sendInquiryApi } from './utils/slack';
 
 // import csv from 'csv-parser';
 // import fs from 'fs';
@@ -10,7 +12,16 @@ import { PrismaService } from './prisma/prisma.service';
 export class AppService {
   constructor(private prismaService: PrismaService) {}
   getHello(): string {
-    return 'Hello Sizy!';
+    return `Hello Sizy, Client:latest:${getLatestCommit()}`;
+  }
+
+  async getClientCommit() {
+    const commit = await getLatestCommit();
+    return commit;
+  }
+
+  async postInquiry(brand: string, phone: string, text: string) {
+    await sendInquiryApi(brand, phone, text);
   }
 
   // async sms() {
@@ -54,12 +65,13 @@ export class AppService {
 
   async unionSerach(shopId: number, query: string) {
     const result: any[] = await this.prismaService.$queryRaw`SELECT 
-      RequestItem.id as id, phone, productCode, productSize, comment, count,
+      RequestItem.id as id, phone, productCode, productSize, comment, count, alterComment,
       SizeRequest.shopId, Customer.name, Customer.id as customerId,
       SizeRequest.createdAt as createdAt,
       MATCH(productCode) AGAINST(${query}) as productCodeScore,
       MATCH(productSize) AGAINST(${query}) as productSizeScore,
       MATCH(comment) AGAINST(${query}) as commentScore,
+      MATCH(alterComment) AGAINST(${query}) as alterScore,
       MATCH(Customer.phone) AGAINST(${query}) as phoneScore,
       MATCH(Customer.name) AGAINST(${query}) as nameScore
     FROM 
@@ -73,15 +85,16 @@ export class AppService {
       ) AGAINST(${query} IN BOOLEAN mode) 
       OR MATCH(productSize) AGAINST(${query} IN BOOLEAN MODE)
       OR MATCH(comment) AGAINST(${query} IN BOOLEAN MODE)
+      OR MATCH(alterComment) AGAINST(${query} IN BOOLEAN MODE)
       OR MATCH(Customer.phone) AGAINST(${query} IN BOOLEAN MODE)
       OR MATCH(Customer.name) AGAINST(${query} IN BOOLEAN MODE)
     ORDER BY 
+    createdAt DESC,
     (productCodeScore + productSizeScore + commentScore + phoneScore) DESC,
     phoneScore DESC,
     productCodeScore DESC,
     productSizeScore DESC,
-    commentScore DESC,
-    createdAt DESC
+    commentScore DESC
     `;
 
     const filtered = result.filter((x) => Number(x.shopId) === shopId);

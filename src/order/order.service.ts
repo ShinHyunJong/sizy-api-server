@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '@src/prisma/prisma.service';
+import { sendKakao } from '@src/utils/biztalk';
 import { parcelAxios } from '@src/utils/parcel';
 import { UpdateOrderDeliveryDto } from './dto/update-order.dto';
 
@@ -109,16 +110,72 @@ export class OrderService {
     return 'deleted';
   }
 
-  async updatePickupStatus(orderAddressId: number) {
+  async updatePickupStatus(
+    orderAddressId: number,
+    hasPickedup: boolean,
+    sellerId: number | null,
+    notify: boolean,
+  ) {
     const orderAddress = await this.prismaService.orderAddress.update({
       where: {
         id: orderAddressId,
       },
+      include: {
+        sizeRequest: {
+          select: {
+            shop: {
+              include: {
+                brand: true,
+              },
+            },
+          },
+        },
+        seller: {
+          select: {
+            name: true,
+          },
+        },
+      },
       data: {
-        hasPickedup: true,
-        pickedupAt: new Date(),
+        hasPickedup,
+        pickedupAt: hasPickedup ? new Date() : null,
+        tosserId: sellerId,
       },
     });
+    if (hasPickedup && notify) {
+      //알림톡 발송
+      const notification = await this.prismaService.notification.findFirst({
+        where: {
+          orderAddressId,
+        },
+        select: {
+          id: true,
+          uniqueId: true,
+        },
+      });
+
+      const receipient = orderAddress.receipient;
+      const phone = orderAddress.phone;
+      const shopPhone = orderAddress.sizeRequest.shop.phone;
+      const shopName = `${orderAddress.sizeRequest.shop.brand.name} ${orderAddress.sizeRequest.shop.branch}`;
+      const sellerName = orderAddress.seller.name;
+      const link = `store.sizy.co.kr/notification/${notification.uniqueId}`;
+      await sendKakao(
+        [
+          {
+            recipientNo: phone,
+            templateParameter: {
+              receipient,
+              shopName,
+              sellerName,
+              shopPhone,
+              link,
+            },
+          },
+        ],
+        'p-toss-complete',
+      );
+    }
     return orderAddress;
   }
 }

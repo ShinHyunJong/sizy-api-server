@@ -22,10 +22,12 @@ export class SizeRequestController {
   @Get(':shopId')
   findOne(
     @Param('shopId') shopId: number,
-    @Query() query: { isComplete: string },
+    @Query() query: { isComplete: string; take?: number; skip?: number },
   ) {
     return this.sizeRequestService.getSizeRequestList(
       shopId,
+      Number(query.skip) || 0,
+      Number(query.take) || 20,
       query.isComplete === 'true',
     );
   }

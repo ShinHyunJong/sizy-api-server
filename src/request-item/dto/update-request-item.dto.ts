@@ -6,6 +6,7 @@ import {
   ValidateNested,
   IsDateString,
   IsBoolean,
+  IsDate,
 } from 'class-validator';
 
 import { Type } from 'class-transformer';
@@ -122,6 +123,18 @@ export class OrderAddress {
   @IsOptional()
   @IsBoolean()
   readonly hasNotied: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  readonly hasPickedup: boolean | null | undefined;
+
+  @IsOptional()
+  @IsDate()
+  readonly pickedupAt: Date | null | undefined;
+
+  @IsOptional()
+  @IsNumber()
+  readonly tosserId: number | null | undefined;
 }
 
 export class UpdateRequestItemDto {

@@ -85,11 +85,30 @@ export class SizeRequestService {
     return requestDetail;
   }
 
-  async getSizeRequestList(shopId: number, isComplete?: boolean) {
+  async getSizeRequestList(
+    shopId: number,
+    skip: number,
+    take: number,
+    isComplete?: boolean,
+  ) {
+    const totalCountList = await this.prismaService.sizeRequest.findMany({
+      where: {
+        shopId,
+      },
+      include: {
+        _count: {
+          select: {
+            requestItemList: true,
+          },
+        },
+      },
+    });
     const requestList = await this.prismaService.sizeRequest.findMany({
       where: {
         shopId,
       },
+      skip: skip,
+      take: take,
       include: {
         _count: {
           select: {
@@ -118,6 +137,9 @@ export class SizeRequestService {
         },
         requestItemList: true,
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
     const reformed = requestList
       .map((x) => {
@@ -130,7 +152,11 @@ export class SizeRequestService {
         const itemCount = x._count.requestItemList;
         return isComplete ? itemCount !== 0 : itemCount === 0;
       });
-    return reformed;
+    return {
+      totalCount: totalCountList.filter((x) => x._count.requestItemList !== 0)
+        .length,
+      requestList: reformed,
+    };
   }
 
   async updateSellar(requestId, body) {

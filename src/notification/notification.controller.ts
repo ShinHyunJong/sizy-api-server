@@ -12,14 +12,22 @@ import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { JwtAuthGuard } from '@src/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '@src/guards/jwt-optional.guard';
+import { create } from 'lodash';
 
 @Controller('notification')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
   @UseGuards(JwtAuthGuard)
   @Get('/')
-  getNotificationList(@Req() req) {
-    return this.notificationService.getNotificationList(req.user.shopId);
+  getNotificationList(
+    @Req() req,
+    @Query() query: { skip?: number; take?: number },
+  ) {
+    return this.notificationService.getNotificationList(
+      req.user.shopId,
+      Number(query.skip) || 0,
+      Number(query.take) || 20,
+    );
   }
 
   @UseGuards(OptionalJwtAuthGuard)

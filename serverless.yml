@@ -5,7 +5,7 @@ configValidationMode: error
 
 provider:
   name: aws
-  runtime: nodejs16.x
+  runtime: nodejs18.x
   profile: default
   stage: ${opt:stage, 'development'} # --stage development, production / default is development
   region: ap-northeast-2 # Lambda Edge는 us-east-1에만 배포 가능.

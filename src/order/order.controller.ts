@@ -51,7 +51,15 @@ export class OrderController {
   }
 
   @Put('/pickup/:orderId')
-  updatePickupStatus(@Param('orderId') orderId: number) {
-    return this.orderService.updatePickupStatus(orderId);
+  updatePickupStatus(
+    @Param('orderId') orderId: number,
+    @Body() body: { hasPickedUp: boolean; sellerId: number; notify: boolean },
+  ) {
+    return this.orderService.updatePickupStatus(
+      orderId,
+      body.hasPickedUp,
+      Number(body.sellerId) || null,
+      body.notify ? true : false,
+    );
   }
 }

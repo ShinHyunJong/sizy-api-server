@@ -1,4 +1,12 @@
-import { Controller, Get, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  Req,
+  Post,
+  Body,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
@@ -9,6 +17,16 @@ export class AppController {
   @Get()
   getHello(): string {
     return this.appService.getHello();
+  }
+
+  @Get('/commit/client')
+  getClientCommit() {
+    return this.appService.getClientCommit();
+  }
+
+  @Post('/inquiry')
+  postInquiry(@Body() body: { brand: string; phone: string; text: string }) {
+    return this.appService.postInquiry(body.brand, body.phone, body.text);
   }
 
   // @Get('/sms')
